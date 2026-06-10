@@ -3,7 +3,7 @@ const SPRITE = {
   frameHeight: 166,
   numFrames:   4,
   animSpeed:   20,
-  scale:       0.5,
+  scale:       0.40,
   rows: {
     down:  0,
     up:    1,
@@ -28,7 +28,7 @@ const COIN = {
   frameHeight: 152,
   numFrames:   8,
   animSpeed:   6,
-  scale:       0.35,  // scaled down so it fits neatly in a 50px tile
+  scale:       0.35,
 };
 
 // ------------------------------------------------------------
@@ -49,13 +49,12 @@ const MAZE = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
-// Colours for each tile type — stored as RGB arrays
 const TILE_COLORS = {
-  0: [40,  40,  50 ], // floor — dark grey
-  1: [80,  60,  100], // wall  — purple-grey
-  2: [40,  40,  50 ], // start — same as floor
-  3: [40,  40,  50 ], // star  — same as floor (star drawn on top)
-  4: [60,  100, 80 ], // exit  — green tint when locked
+  0: [40,  40,  50 ],
+  1: [80,  60,  100],
+  2: [40,  40,  50 ],
+  3: [40,  40,  50 ],
+  4: [60,  100, 80 ],
 };
 
 // ------------------------------------------------------------
@@ -71,15 +70,23 @@ let player = {
   direction:    "down",
   isMoving:     false,
 
-  hw: 14,
-  hh: 22,
+  hw: 12,
+  hh: 14,
 };
 
 // ------------------------------------------------------------
-// STARS (was COINS)
+// STARS
 // ------------------------------------------------------------
 let coins = [];
 let coinsCollected = 0;
+
+// ------------------------------------------------------------
+// FLASH EFFECT
+// When a star is collected, flashAlpha is set to 180 and
+// fades down to 0 over the next ~20 frames — a quick gold
+// overlay that pulses across the whole screen.
+// ------------------------------------------------------------
+let flashAlpha = 0;
 
 // ------------------------------------------------------------
 // GAME STATE
@@ -141,6 +148,7 @@ function draw() {
   checkExit();
   animateSprite();
   drawCharacter();
+  drawFlash();
   drawHUD();
 
   if (gameWon) {
@@ -214,22 +222,22 @@ function handleInput() {
 
   player.isMoving = false;
 
-  if (keyIsDown(87)) { // W — up
+  if (keyIsDown(87)) {
     player.y -= player.speed;
     player.direction = "up";
     player.isMoving = true;
   }
-  if (keyIsDown(83)) { // S — down
+  if (keyIsDown(83)) {
     player.y += player.speed;
     player.direction = "down";
     player.isMoving = true;
   }
-  if (keyIsDown(65)) { // A — left
+  if (keyIsDown(65)) {
     player.x -= player.speed;
     player.direction = "left";
     player.isMoving = true;
   }
-  if (keyIsDown(68)) { // D — right
+  if (keyIsDown(68)) {
     player.x += player.speed;
     player.direction = "right";
     player.isMoving = true;
@@ -286,6 +294,7 @@ function checkCoinCollection() {
     if (d < TILE_SIZE * 0.6) {
       coins[i].collected = true;
       coinsCollected++;
+      flashAlpha = 180; // trigger the gold flash
     }
   }
 }
@@ -342,6 +351,24 @@ function drawCharacter() {
 }
 
 // ------------------------------------------------------------
+// drawFlash()
+// Draws a gold semi-transparent overlay over the whole canvas
+// when a star is collected, then fades out quickly.
+// rectMode and noStroke are set locally so nothing else breaks.
+// ------------------------------------------------------------
+function drawFlash() {
+  if (flashAlpha <= 0) return;
+
+  rectMode(CORNER);
+  noStroke();
+  fill(255, 220, 50, flashAlpha);
+  rect(0, 0, width, height);
+
+  flashAlpha -= 12; // fade speed — lower = slower fade
+  if (flashAlpha < 0) flashAlpha = 0;
+}
+
+// ------------------------------------------------------------
 // drawHUD()
 // ------------------------------------------------------------
 function drawHUD() {
@@ -374,4 +401,4 @@ function drawWinScreen() {
   textSize(16);
   fill(180);
   text("All stars collected", width / 2, height / 2 + 20);
-} 
+}
